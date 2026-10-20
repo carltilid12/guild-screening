@@ -228,7 +228,7 @@ table.res tbody tr:hover{background:var(--sunk)}
     <ul class="rules">
       <li>You have 60 minutes. The test submits itself when time runs out.</li>
       <li>Coding answers are written in Python 3. Read input with <code>input()</code> and print the answer.</li>
-      <li><b>Run code</b> checks your program against the sample tests. After you submit, your code is also checked against hidden tests, including very large inputs, so efficient solutions score higher.</li>
+      <li><b>Run code</b> checks your program against the sample tests and hidden tests. You see the sample inputs, but hidden test inputs stay secret.</li>
       <li>Your work is saved in this browser as you go. Do not open other websites during the test.</li>
     </ul>
     <p class="err" id="startErr"></p>
@@ -306,6 +306,24 @@ const Q = [
 ];
 const PARTS = { A:"Part A · Fundamentals", B:"Part B · Code Tracing", C:"Part C · Logic", D:"Part D · Coding", E:"Part E · Problems" };
 const byId = Object.fromEntries(Q.map(q => [q.id, q]));
+
+/* ---------- hidden tests: inputs only; expected outputs are stored as SHA-256 fingerprints ---------- */
+function rngH(seed){ let s = seed % 2147483647; if (s <= 0) s += 2147483646; return () => (s = s * 48271 % 2147483647); }
+function genPlates(n, seed){ const r = rngH(seed), a = []; for (let i = 0; i < n; i++) a.push(1 + r() % 1000000000); return n + "\n" + a.join(" "); }
+const HIDDEN = {
+  D1:[{in:"1", h:"590b5010eb04081fb85c62723abda15c46970ac12d843924f9fe6c3423022a44"}, {in:"7", h:"4e322f36ba71783cf40b9639a2caf8b56c0e0aeeed6cebb124a1cd96c6b36da1"}, {in:"100", h:"48e4ede6deabaa7043fda941f8bafa16cd966faaa18c2d5de713f90bc466755c"}, {in:"997", h:"8df10d98e427e268cc2aa80440100f9f0dc72c726927745c401e72e49c1fa57d"}, {in:"360360", h:"4b3c65cca0e5e1bf2ee6fc2b2f917c9ccc298d363ea6c25ac39bbb70dafaccc4"}],
+  D2:[{in:"1", h:"9728104a867f8627ae850d558d4444dcc7b8dd97286113d0158d5f50966465f0"}, {in:"2", h:"698dcb8d16a469629a197ce136b25642a7bf1b4bbe69fe82fa0109dbe358d2bf"}, {in:"100", h:"b0dfc47333d9720e1d47b02b95feb953130005de4b02a59b751234f2e2d3223d"}, {in:"1000", h:"f1e83e9b0f99649b18da5edc6475776238bd1ccade872785ec2a1f267289fbd3"}],
+  E1:[{in:"1\n8", h:"ff0f28dd428c6aca6693cb9b030bdcaaa90c07df06d044daacd2cca7a77844df"}, {in:"4\n1000000000 16 61 34", h:"e578cd50399b1fa0e971896433cd92351c21faaeca0b9e1ce686de6cd0563eaa"}, {gen:() => genPlates(50000, 20261019), h:"9b49007d4edf534a5270570f781262ea4171136f0e2a1708731ece05978ac7aa"}],
+  E2:[{in:"1\n-5", h:"a21102ee5eb3039c0d50f4a5730a70a9af8da171476ddc53e71320b25b6c4912"}, {in:"4\n-3 -1 -4 -2", h:"3426ca280489826f2033eb65f7d61019e11d01c1601fc6a394e3beab5e98a05a"}, {in:"6\n5 -10 3 3 -1 4", h:"f346b956f6f888d2d17f808fb044bcfaf3209adc6a3ca2a51de9e15704e35742"}]
+};
+Q.forEach(q => { if (HIDDEN[q.id]) q.hidden = HIDDEN[q.id]; });
+const hiddenIn = t => t.gen ? (t._in = t._in || t.gen()) : t.in;
+const canHash = !!(window.crypto && window.crypto.subtle && window.TextEncoder);
+async function fp(id, out){
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("gs:" + id + ":" + out));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
 
 /* ---------- state ---------- */
 let S = load() || { name:"", section:"", startedAt:0, answers:{}, code:{}, runs:{}, current:"A1", submitted:false };
@@ -544,7 +562,7 @@ function renderCode(q){
   reset.onclick = () => ask("Reset code?", "This replaces your code for " + q.id + " with the starter code.", "Reset", () => { ta.value = q.starter; ta.dispatchEvent(new Event("input")); });
 
   const acts = el("div", "ide-actions");
-  const status = el("span", "status", "Hidden tests run after you submit the test.");
+  const status = el("span", "status", "Run code checks the samples and the hidden tests.");
   const runB = el("button", "btn primary", "Run code"); runB.type = "button";
   acts.append(status, runB);
   const res = el("div", "results"); res.hidden = true;
@@ -557,16 +575,22 @@ function renderCode(q){
     const prog = el("div", "sum"); prog.append(el("span", "spin"), el("span", null, " Preparing Python…")); res.append(prog);
     try { await Runner.init(); }
     catch { res.textContent = ""; res.append(el("div", "sum bad", "The Python runner could not load. Check your internet connection and try again.")); runB.disabled = false; return; }
-    const r = { code:ta.value, total:q.samples.length, passed:0, cases:[] };
-    for (let i = 0; i < q.samples.length; i++){
-      prog.lastChild.textContent = " Running sample " + (i + 1) + " of " + q.samples.length + "…";
-      const t = q.samples[i], o = await Runner.run(ta.value, t.in);
+    const hid = canHash ? (q.hidden || []) : [];
+    const ns = q.samples.length, all = ns + hid.length;
+    const r = { code:ta.value, total:all, passed:0, sTotal:ns, sPassed:0, hTotal:hid.length, hPassed:0, cases:[], noHash:!canHash };
+    let stop = null;
+    for (let i = 0; i < all; i++){
+      const isS = i < ns, t = isS ? q.samples[i] : hid[i - ns];
+      prog.lastChild.textContent = isS ? " Running sample " + (i + 1) + " of " + ns + "…" : " Running hidden test " + (i - ns + 1) + " of " + hid.length + "…";
+      const o = stop || await Runner.run(ta.value, isS ? t.in : hiddenIn(t));
       let st = "fail", msg = "";
       if (o.timeout){ st = "tle"; msg = "Time limit exceeded (" + LIMIT_MS / 1000 + " s). Your program is too slow or never stops."; }
       else if (!o.ok) msg = cleanErr(o.err);
-      else if (norm(o.out) === norm(t.out)) st = "pass";
-      if (st === "pass") r.passed++;
-      r.cases.push({ st, msg, in:t.in, exp:t.out, got:(o.out || "").slice(0, 2000) });
+      else if (isS ? norm(o.out) === norm(t.out) : (await fp(q.id, norm(o.out))) === t.h) st = "pass";
+      else if (!isS) msg = "Your output didn't match the expected answer.";
+      if (st === "pass"){ r.passed++; if (isS) r.sPassed++; else r.hPassed++; }
+      r.cases.push(isS ? { st, msg, in:t.in, exp:t.out, got:(o.out || "").slice(0, 2000) } : { st, msg, hidden:true });
+      if (!o.ok && !o.timeout && /SyntaxError|ParseError|IndentationError/.test(o.err || "")) stop = o;
     }
     S.runs[q.id] = r; save(); renderSide(); showResults(res, r); runB.disabled = false;
   };
@@ -574,16 +598,22 @@ function renderCode(q){
 }
 function showResults(box, r){
   box.hidden = false; box.textContent = "";
-  box.append(el("div", "sum " + (r.passed === r.total ? "ok" : "bad"), "Sample tests: " + r.passed + "/" + r.total + " passed"));
+  const sp = r.sPassed != null ? r.sPassed : r.passed, stt = r.sTotal != null ? r.sTotal : r.total;
+  let line = "Samples: " + sp + "/" + stt + " passed";
+  if (r.hTotal) line += " · Hidden tests: " + r.hPassed + "/" + r.hTotal + " passed";
+  box.append(el("div", "sum " + (r.passed === r.total ? "ok" : "bad"), line));
+  if (r.noHash) box.append(el("p", "locked", "Hidden tests can't run in this browser. Your teacher will still check them."));
   const tcs = el("div", "tcs"), det = el("div", "tcd");
   const pick = k => {
     tcs.querySelectorAll(".tc").forEach((b, j) => b.classList.toggle("on", j === k));
     det.textContent = ""; const c = r.cases[k];
+    if (c.hidden){ det.append(el("p", "locked", c.st === "pass" ? "Hidden test passed. Hidden test inputs are not shown." : (c.msg || "Hidden test failed.") + " Hidden test inputs are not shown.")); return; }
     const row = (cap, txt, cls) => { const d = el("div", "row"); d.append(el("div", "cap", cap), el("pre", cls || null, txt === "" ? "(no output)" : txt)); det.append(d); };
     row("Input", c.in); row("Your output", c.got || ""); row("Expected output", c.exp);
     if (c.msg) row(c.st === "tle" ? "Time limit" : "Error", c.msg, "errtxt");
   };
-  r.cases.forEach((c, k) => { const b = el("button", "tc " + c.st); b.type = "button"; b.append(el("span", "s"), el("span", null, "Sample " + (k + 1))); b.onclick = () => pick(k); tcs.append(b); });
+  let si = 0, hi = 0;
+  r.cases.forEach((c, k) => { const b = el("button", "tc " + c.st); b.type = "button"; b.append(el("span", "s"), el("span", null, c.hidden ? "Hidden " + (++hi) : "Sample " + (++si))); b.onclick = () => pick(k); tcs.append(b); });
   box.append(tcs, det);
   const bad = r.cases.findIndex(c => c.st !== "pass"); if (r.cases.length) pick(bad >= 0 ? bad : 0);
 }

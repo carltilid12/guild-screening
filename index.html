@@ -214,11 +214,11 @@ table.res tbody tr:hover{background:var(--sunk)}
       <thead><tr><th>Part</th><th>Focus</th><th class="n">Items</th><th class="n">Points</th></tr></thead>
       <tbody>
         <tr><td>A</td><td>CS fundamentals (multiple choice)</td><td class="n">5</td><td class="n">5</td></tr>
-        <tr><td>B</td><td>Code tracing</td><td class="n">5</td><td class="n">10</td></tr>
-        <tr><td>C</td><td>Logic</td><td class="n">2</td><td class="n">5</td></tr>
+        <tr><td>B</td><td>Logic</td><td class="n">2</td><td class="n">5</td></tr>
+        <tr><td>C</td><td>Code tracing</td><td class="n">5</td><td class="n">10</td></tr>
         <tr><td>D</td><td>Coding</td><td class="n">2</td><td class="n">14</td></tr>
-        <tr><td>E</td><td>Problems</td><td class="n">2</td><td class="n">16</td></tr>
-        <tr><td></td><td><b>Total</b></td><td class="n">16</td><td class="n"><b>50</b></td></tr>
+        <tr><td>E</td><td>Problems</td><td class="n">1</td><td class="n">6</td></tr>
+        <tr><td></td><td><b>Total</b></td><td class="n">15</td><td class="n"><b>40</b></td></tr>
       </tbody>
     </table>
     <div class="fields">
@@ -227,7 +227,7 @@ table.res tbody tr:hover{background:var(--sunk)}
     </div>
     <ul class="rules">
       <li>You have 60 minutes. The test submits itself when time runs out.</li>
-      <li>Coding answers are written in Python 3. Read input with <code>input()</code> and print the answer.</li>
+      <li>All code is in Python 3. Read input with <code>input()</code> and print the answer, exactly like the samples.</li>
       <li><b>Run code</b> checks your program against the sample tests and hidden tests. You see the sample inputs, but hidden test inputs stay secret.</li>
       <li>Your work is saved in this browser as you go. Do not open other websites during the test.</li>
     </ul>
@@ -254,67 +254,65 @@ const SK = ["https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js","http
 /* ===== SETUP: paste your Google Apps Script web app URL between the quotes ===== */
 const SUBMIT_URL = "https://script.google.com/macros/s/AKfycbzkSeV1xEY-R7QdhZ6mWKi9Xglr5mPwWAVchVxmypQRNirhHGXueewVSXCNtz5xq5NC/exec";
 /* ============================================================================== */
-const DURATION_MIN = 60, LIMIT_MS = 6000, STORE_KEY = "guild-screening-gh-v1";
+const DURATION_MIN = 60, LIMIT_MS = 6000, STORE_KEY = "guild-screening-gh-v3";
 const $ = id => document.getElementById(id);
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 
 /* ---------- questions (no answer keys or hidden tests live on this page) ---------- */
-const STARTER = "# Read input with input() and print your answer.\nn = int(input())\n\nprint(n)\n";
-const STARTER_LIST = "# Read input with input() and print your answer.\nn = int(input())\nnums = list(map(int, input().split()))\n\nprint(n)\n";
+const LANGNAME = { python:"Python 3", java:"Java", cpp:"C++" };
+const STARTERS = { python:{"one": "# Read input with input() and print your answer.\nn = int(input())\n\nprint(n)\n", "list": "# Read input with input() and print your answer.\nn = int(input())\nnums = list(map(int, input().split()))\n\nprint(n)\n"}, java:{"one": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        long n = Long.parseLong(br.readLine().trim());\n\n        System.out.println(n);\n    }\n}\n", "list": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int n = Integer.parseInt(br.readLine().trim());\n        long[] nums = new long[n];\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) nums[i] = Long.parseLong(st.nextToken());\n\n        System.out.println(n);\n    }\n}\n"}, cpp:{"one": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    long long n;\n    cin >> n;\n\n    cout << n << endl;\n    return 0;\n}\n", "list": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<long long> nums(n);\n    for (auto& x : nums) cin >> x;\n\n    cout << n << endl;\n    return 0;\n}\n"} };
+const MAIN_NOTE = "Assume this runs inside main, with the usual imports.";
+const curLang = () => "python";
+const isPy = () => curLang() === "python";
+const L = v => (v && typeof v === "object" && !Array.isArray(v)) ? (v[curLang()] != null ? v[curLang()] : v.python) : v;
+const starterOf = q => STARTERS[curLang()][q.starter];
 const Q = [
   { id:"A1", part:"A", type:"mcq", pts:1, title:"Last in, first out", prompt:"Which data structure follows Last-In, First-Out (LIFO) order?", opts:["Queue","Stack","Linked list","Hash table"] },
-  { id:"A2", part:"A", type:"mcq", pts:1, title:"String length", prompt:'In Python, what is <code>len("hackathon")</code>?', opts:["8","9","10","Error"] },
-  { id:"A3", part:"A", type:"mcq", pts:1, title:"Negative modulo", prompt:"In Python, what is <code>-7 % 3</code>?", opts:["-1","1","2","-2"] },
+  { id:"A2", part:"A", type:"mcq", pts:1, title:"String length", prompt:{"python": "In Python, what is <code>len(\"hackathon\")</code>?", "java": "In Java, what is <code>\"hackathon\".length()</code>?", "cpp": "In C++, what is <code>string(\"hackathon\").length()</code>?"}, opts:["8","9","10","Error"] },
+  { id:"A3", part:"A", type:"mcq", pts:1, title:"Negative modulo", prompt:{"python": "In Python, what is <code>-7 % 3</code>?", "java": "In Java, what is <code>-7 % 3</code>?", "cpp": "In C++, what is <code>-7 % 3</code>?"}, opts:["-1","1","2","-2"] },
   { id:"A4", part:"A", type:"mcq", pts:1, title:"Binary search", prompt:"Binary search on a sorted list of 1,000,000 numbers needs at most about how many comparisons?", opts:["10","20","1,000","500,000"] },
-  { id:"A5", part:"A", type:"mcq", pts:1, title:"Time complexity", prompt:"What is the time complexity of this code?", code:"for i in range(n):\n    for j in range(i):\n        print(i, j)", lang:"Python", opts:["O(n)","O(n log n)","O(n²)","O(2ⁿ)"] },
+  { id:"A5", part:"A", type:"mcq", pts:1, title:"Time complexity", prompt:"What is the time complexity of this code?", code:{"python": "for i in range(n):\n    for j in range(i):\n        print(i, j)", "java": "for (int i = 0; i < n; i++) {\n    for (int j = 0; j < i; j++) {\n        System.out.println(i + \" \" + j);\n    }\n}", "cpp": "for (int i = 0; i < n; i++) {\n    for (int j = 0; j < i; j++) {\n        cout << i << \" \" << j << endl;\n    }\n}"}, opts:["O(n)","O(n log n)","O(n²)","O(2ⁿ)"] },
 
-  { id:"B1", part:"B", type:"trace", pts:2, title:"Sort and slice", lang:"Python", code:"x = [3, 1, 4, 1, 5]\nx.sort()\nprint(x[1:4])" },
-  { id:"B2", part:"B", type:"trace", pts:2, title:"Stepping loop", lang:"Python", code:"total = 0\nfor i in range(1, 10, 3):\n    total += i\nprint(total // 5, total % 5)" },
-  { id:"B3", part:"B", type:"trace", pts:2, title:"Recursion", lang:"Python", code:"def f(n):\n    if n <= 1:\n        return n\n    return f(n - 1) + f(n - 2)\n\nprint(f(7))" },
-  { id:"B4", part:"B", type:"trace", pts:2, title:"Counting letters", lang:"Python", code:'s = "informatics"\ncount = {}\nfor ch in s:\n    count[ch] = count.get(ch, 0) + 1\nprint(max(count, key=count.get), len(count))' },
-  { id:"B5", part:"B", type:"trace", pts:2, title:"Array references", lang:"Java", note:"Assume this runs inside main.", code:"int[] a = {1, 2, 3};\nint[] b = a;\nint[] c = a.clone();\nb[0] = 9;\nc[1] = 7;\nSystem.out.println(a[0] + a[1] + \" \" + c[0]);" },
-
-  { id:"C1", part:"C", type:"num", pts:3, title:"The heavy coin", prompt:"You have 9 identical-looking coins. One is slightly heavier. Using a balance scale, what is the minimum number of weighings that always finds the heavy coin?", explain:"Describe your strategy (your teacher reads this)." },
-  { id:"C2", part:"C", type:"multi", pts:2, title:"Greedy change", prompt:"A country has coins worth 1, 4, and 6 pesos. You want to make 8 pesos using the fewest coins.", parts:[
+  { id:"B1", part:"B", type:"num", pts:3, title:"The heavy coin", prompt:"You have 9 identical-looking coins. One is slightly heavier. Using a balance scale, what is the minimum number of weighings that always finds the heavy coin?", explain:"Describe your strategy (your teacher reads this)." },
+  { id:"B2", part:"B", type:"multi", pts:2, title:"Greedy change", prompt:"A country has coins worth 1, 4, and 6 pesos. You want to make 8 pesos using the fewest coins.", parts:[
       "A greedy cashier always takes the largest coin that fits. How many coins does the cashier use?",
       "What is the actual minimum number of coins?" ] },
 
-  { id:"D1", part:"D", type:"code", pts:6, title:"Divisor Sum", starter:STARTER,
+  { id:"C1", part:"C", type:"trace", pts:2, title:"Sort and slice", code:{"python": "x = [3, 1, 4, 1, 5]\nx.sort()\nprint(x[1:4])", "java": "int[] x = {3, 1, 4, 1, 5};\nArrays.sort(x);\nSystem.out.println(Arrays.toString(Arrays.copyOfRange(x, 1, 4)));", "cpp": "vector<int> x = {3, 1, 4, 1, 5};\nsort(x.begin(), x.end());\nfor (int i = 1; i < 4; i++) cout << x[i] << \" \";"} },
+  { id:"C2", part:"C", type:"trace", pts:2, title:"Stepping loop", code:{"python": "total = 0\nfor i in range(1, 10, 3):\n    total += i\nprint(total // 5, total % 5)", "java": "int total = 0;\nfor (int i = 1; i < 10; i += 3) {\n    total += i;\n}\nSystem.out.println(total / 5 + \" \" + total % 5);", "cpp": "int total = 0;\nfor (int i = 1; i < 10; i += 3) {\n    total += i;\n}\ncout << total / 5 << \" \" << total % 5;"} },
+  { id:"C3", part:"C", type:"trace", pts:2, title:"Recursion", code:{"python": "def f(n):\n    if n <= 1:\n        return n\n    return f(n - 1) + f(n - 2)\n\nprint(f(7))", "java": "static int f(int n) {\n    if (n <= 1) return n;\n    return f(n - 1) + f(n - 2);\n}\n\n// inside main:\nSystem.out.println(f(7));", "cpp": "int f(int n) {\n    if (n <= 1) return n;\n    return f(n - 1) + f(n - 2);\n}\n\n// inside main:\ncout << f(7);"} },
+  { id:"C4", part:"C", type:"trace", pts:2, title:"Counting letters", code:{"python": "s = \"informatics\"\ncount = {}\nfor ch in s:\n    count[ch] = count.get(ch, 0) + 1\nprint(max(count, key=count.get), len(count))", "java": "String s = \"informatics\";\nMap<Character, Integer> count = new LinkedHashMap<>();\nfor (char ch : s.toCharArray()) {\n    count.put(ch, count.getOrDefault(ch, 0) + 1);\n}\nchar best = ' ';\nfor (char ch : count.keySet()) {\n    if (best == ' ' || count.get(ch) > count.get(best)) best = ch;\n}\nSystem.out.println(best + \" \" + count.size());", "cpp": "string s = \"informatics\";\nmap<char, int> count;\nfor (char ch : s) {\n    count[ch]++;\n}\nchar best = s[0];\nfor (auto& p : count) {\n    if (p.second > count[best]) best = p.first;\n}\ncout << best << \" \" << count.size();"} },
+  { id:"C5", part:"C", type:"trace", pts:2, title:"Array references", code:{"python": "a = [1, 2, 3]\nb = a\nc = a.copy()\nb[0] = 9\nc[1] = 7\nprint(a[0] + a[1], c[0])", "java": "int[] a = {1, 2, 3};\nint[] b = a;\nint[] c = a.clone();\nb[0] = 9;\nc[1] = 7;\nSystem.out.println(a[0] + a[1] + \" \" + c[0]);", "cpp": "vector<int> a = {1, 2, 3};\nvector<int>& b = a;\nvector<int> c = a;\nb[0] = 9;\nc[1] = 7;\ncout << a[0] + a[1] << \" \" << c[0];"} },
+
+  { id:"D1", part:"D", type:"code", pts:6, title:"Divisor Sum", starter:"one", bigNote:true,
     body:[["p","Given a positive integer N, print the sum of all of its positive divisors, including 1 and N itself."],
           ["h","Input"],["p","One line with the integer N (1 ≤ N ≤ 1,000,000,000)."],
           ["h","Output"],["p","One integer: the sum of the divisors of N."],
           ["h","Explanation"],["p","The divisors of 12 are 1, 2, 3, 4, 6 and 12, so the answer is 28."]],
     samples:[{in:"12",out:"28"},{in:"6",out:"12"}] },
-  { id:"D2", part:"D", type:"code", pts:8, title:"Prime Sum", starter:STARTER,
-    body:[["p","Given an integer N, print the sum of all prime numbers less than or equal to N."],
-          ["h","Input"],["p","One line with the integer N (1 ≤ N ≤ 200,000)."],
-          ["h","Output"],["p","One integer: the sum of all primes up to N. Print 0 if there are none."],
-          ["h","Explanation"],["p","The primes up to 10 are 2, 3, 5 and 7, which add up to 17."]],
-    samples:[{in:"10",out:"17"},{in:"20",out:"77"}] },
-  { id:"E1", part:"E", type:"code", pts:6, title:"Lucky Plates", starter:STARTER_LIST,
+  { id:"D2", part:"D", type:"code", pts:8, title:"Is It Prime?", starter:"one",
+    body:[["p","A prime number is a whole number greater than 1 whose only divisors are 1 and itself. Given N, decide whether N is prime."],
+          ["h","Input"],["p","One line with the integer N (1 ≤ N ≤ 1,000,000,000)."],
+          ["h","Output"],["p","Print YES if N is prime, or NO if it is not. Use capital letters."],
+          ["h","Explanation"],["p","7 has no divisors other than 1 and 7, so it is prime. 12 is divisible by 2, 3, 4 and 6, so it is not."]],
+    samples:[{in:"7",out:"YES"},{in:"12",out:"NO"}] },
+  { id:"E1", part:"E", type:"code", pts:6, title:"Lucky Plates", starter:"list",
     body:[["p","A jeepney plate number is lucky if the sum of its digits is divisible by 7. Given N plate numbers, count how many are lucky."],
           ["h","Input"],["p","The first line has N (1 ≤ N ≤ 50,000). The second line has N integers, each between 1 and 1,000,000,000."],
           ["h","Output"],["p","One integer: the number of lucky plates."],
           ["h","Explanation"],["p","In the first sample, 16, 70 and 124 each have a digit sum of 7. The digit sums of 23 and 99 are 5 and 18."]],
     samples:[{in:"5\n16 23 70 99 124",out:"3"},{in:"3\n7 70 700",out:"3"}] },
-  { id:"E2", part:"E", type:"code", pts:10, title:"Best Streak", starter:STARTER_LIST,
-    body:[["p","A team's score change for each of N days is given, and it can be negative. Find the largest total score change over any run of one or more consecutive days."],
-          ["h","Input"],["p","The first line has N (1 ≤ N ≤ 100,000). The second line has N integers, each between −10,000 and 10,000."],
-          ["h","Output"],["p","One integer: the largest possible sum of a run of consecutive days."],
-          ["h","Explanation"],["p","In the first sample, the run 4, −1, 2, 1 adds up to 6, and no other run does better."]],
-    samples:[{in:"9\n-2 1 -3 4 -1 2 1 -5 4",out:"6"},{in:"5\n1 2 3 4 5",out:"15"}] }
 ];
-const PARTS = { A:"Part A · Fundamentals", B:"Part B · Code Tracing", C:"Part C · Logic", D:"Part D · Coding", E:"Part E · Problems" };
+const PARTS = { A:"Part A · Fundamentals", B:"Part B · Logic", C:"Part C · Code Tracing", D:"Part D · Coding", E:"Part E · Problems" };
 const byId = Object.fromEntries(Q.map(q => [q.id, q]));
 
 /* ---------- hidden tests: inputs only; expected outputs are stored as SHA-256 fingerprints ---------- */
 function rngH(seed){ let s = seed % 2147483647; if (s <= 0) s += 2147483646; return () => (s = s * 48271 % 2147483647); }
 function genPlates(n, seed){ const r = rngH(seed), a = []; for (let i = 0; i < n; i++) a.push(1 + r() % 1000000000); return n + "\n" + a.join(" "); }
 const HIDDEN = {
-  D1:[{in:"1", h:"590b5010eb04081fb85c62723abda15c46970ac12d843924f9fe6c3423022a44"}, {in:"7", h:"4e322f36ba71783cf40b9639a2caf8b56c0e0aeeed6cebb124a1cd96c6b36da1"}, {in:"100", h:"48e4ede6deabaa7043fda941f8bafa16cd966faaa18c2d5de713f90bc466755c"}, {in:"997", h:"8df10d98e427e268cc2aa80440100f9f0dc72c726927745c401e72e49c1fa57d"}, {in:"360360", h:"4b3c65cca0e5e1bf2ee6fc2b2f917c9ccc298d363ea6c25ac39bbb70dafaccc4"}],
-  D2:[{in:"1", h:"9728104a867f8627ae850d558d4444dcc7b8dd97286113d0158d5f50966465f0"}, {in:"2", h:"698dcb8d16a469629a197ce136b25642a7bf1b4bbe69fe82fa0109dbe358d2bf"}, {in:"100", h:"b0dfc47333d9720e1d47b02b95feb953130005de4b02a59b751234f2e2d3223d"}, {in:"1000", h:"f1e83e9b0f99649b18da5edc6475776238bd1ccade872785ec2a1f267289fbd3"}],
-  E1:[{in:"1\n8", h:"ff0f28dd428c6aca6693cb9b030bdcaaa90c07df06d044daacd2cca7a77844df"}, {in:"4\n1000000000 16 61 34", h:"e578cd50399b1fa0e971896433cd92351c21faaeca0b9e1ce686de6cd0563eaa"}, {gen:() => genPlates(50000, 20261019), h:"9b49007d4edf534a5270570f781262ea4171136f0e2a1708731ece05978ac7aa"}],
-  E2:[{in:"1\n-5", h:"a21102ee5eb3039c0d50f4a5730a70a9af8da171476ddc53e71320b25b6c4912"}, {in:"4\n-3 -1 -4 -2", h:"3426ca280489826f2033eb65f7d61019e11d01c1601fc6a394e3beab5e98a05a"}, {in:"6\n5 -10 3 3 -1 4", h:"f346b956f6f888d2d17f808fb044bcfaf3209adc6a3ca2a51de9e15704e35742"}]
+  D1:[{in:"1", h:"e2a5ec758ce27742ab2257f8ed5a35ccbe3fded5015e437c69f97998e84f7c13"}, {in:"7", h:"ff7fd90f8676596e0e310eaa35964423312c76ef61df92104ab4d5fe8f5713dd"}, {in:"100", h:"486c034aee1e9bc01bee653a5eb9e6a2df8a4957b78068fa88becb99350fe7e7"}, {in:"997", h:"a5c818e1cd0dfda1a9e4f8d650e47a9150b621c6ac266ea4ab669dec1887418f"}, {in:"360360", h:"c954462bb4a0c9d56bda74d17e50036d3201d649605f1c79371ea4624be99166"}],
+  D2:[{in:"1", h:"86445c62abeb02f0400d086a2d40804d9ca67d6bc680ffc2e5edff6f76e2c4cb"}, {in:"2", h:"20e0d8c3616eca5f44bf32b97281c152158c852a8b0382d0b1bb188d6035d9d2"}, {in:"9", h:"95782a2bfcfe52b17c02c4c7633c478a74bf6b069e6e9ef10199762c640d5e05"}, {in:"97", h:"3f63d96032111e560d5246aac31a5f360ff40d0cd8c92873d2a2e1ff50a88a8b"}, {in:"1000", h:"2a2ae73fcba099c4f31bb8db505eef6d575e6604557a0fe0b69b972485f30ac1"}, {in:"7919", h:"f240046124800ee5d399ea347d86ddb5558fd01e9187475d430bcbaf8051424e"}, {in:"998812807", h:"6aee8a6b2289ba9d0ee9372bfe26cdd757fd9d5841eff65b37242aad367a9170"}],
+  E1:[{in:"1\n8", h:"34e0068ff77882b233c4d6315d78c1e9a332873886720207aece85d67c965361"}, {in:"4\n1000000000 16 61 34", h:"59bde55e3b96cb2f75116c101ed249def4d9e8e25a4e75fa81d635ad9a9c42f6"}, {gen:() => genPlates(50000, 20261019), h:"4d735907800df2aaa916e445c310f1d76c378b4cb48f010c898041c7f55c6a28"}]
 };
 Q.forEach(q => { if (HIDDEN[q.id]) q.hidden = HIDDEN[q.id]; });
 const hiddenIn = t => t.gen ? (t._in = t._in || t.gen()) : t.in;
@@ -418,9 +416,11 @@ function answered(q){
   if (q.type === "mcq") return a != null ? "done" : "";
   if (q.type === "trace") return a && a.trim() ? "done" : "";
   if (q.type === "num") return a && String(a.v || "").trim() ? "done" : "";
+  if (q.type === "short") return a && String(a).trim() ? "done" : "";
   if (q.type === "multi"){ const n = q.parts.filter((_, i) => a && String(a[i] || "").trim()).length; return n === q.parts.length ? "done" : n ? "part" : ""; }
   if (q.type === "code"){
-    const c = S.code[q.id]; if (c == null || c === q.starter) return "";
+    const c = S.code[q.id]; if (c == null || c === starterOf(q)) return "";
+    if (!isPy()) return "done";
     const r = S.runs[q.id]; return r && r.code === c && r.passed === r.total ? "done" : "part";
   }
   return "";
@@ -476,8 +476,8 @@ function renderMain(){
   if (q.type === "code"){ m.append(renderCode(q), navRow(q)); return; }
   const card = el("div", "card");
   if (q.type === "mcq"){
-    const p = el("p", "prompt"); p.innerHTML = q.prompt; card.append(p);
-    if (q.code) card.append(snippet(q.code, q.lang));
+    const p = el("p", "prompt"); p.innerHTML = L(q.prompt); card.append(p);
+    if (q.code) card.append(snippet(L(q.code), LANGNAME[curLang()], isPy() ? "" : MAIN_NOTE));
     const box = el("div", "opts"); box.setAttribute("role", "radiogroup");
     q.opts.forEach((o, i) => {
       const lab = el("label", "opt" + (String(S.answers[q.id]) === String(i) ? " sel" : ""));
@@ -489,7 +489,7 @@ function renderMain(){
     card.append(box);
   } else if (q.type === "trace"){
     card.append(el("p", "prompt", "What is the exact output of this program?"));
-    card.append(snippet(q.code, q.lang, q.note));
+    card.append(snippet(L(q.code), LANGNAME[curLang()], isPy() ? "" : MAIN_NOTE));
     const a = el("div", "answer"); const l = el("label", null, "Output"); l.htmlFor = "ans-" + q.id;
     const i = el("input"); i.id = "ans-" + q.id; i.autocomplete = "off"; i.spellcheck = false; i.placeholder = "Type the output exactly as printed";
     i.value = S.answers[q.id] || ""; i.oninput = () => { S.answers[q.id] = i.value; save(); renderSide(); };
@@ -505,6 +505,12 @@ function renderMain(){
     const upd = () => { S.answers[q.id] = { v:i.value, why:t.value }; save(); renderSide(); };
     i.oninput = upd; t.oninput = upd;
     a.append(l, i); b.append(l2, t); card.append(a, b);
+  } else if (q.type === "short"){
+    card.append(el("p", "prompt", q.prompt));
+    const a = el("div", "answer"); const l = el("label", null, q.label); l.htmlFor = "ans-" + q.id;
+    const i = el("input"); i.id = "ans-" + q.id; i.inputMode = "numeric"; i.autocomplete = "off"; i.placeholder = "Type a number"; i.value = S.answers[q.id] || "";
+    i.oninput = () => { S.answers[q.id] = i.value; save(); renderSide(); };
+    a.append(l, i); card.append(a);
   } else if (q.type === "multi"){
     card.append(el("p", "prompt", q.prompt));
     const v = S.answers[q.id] || [];
@@ -523,6 +529,7 @@ function renderCode(q){
   const wrap = el("div", "ide-wrap");
   const st = el("article", "statement");
   for (const [t, txt] of q.body) st.append(t === "h" ? el("h3", null, txt) : el("p", null, txt));
+  if (q.bigNote && !isPy()) st.append(el("p", "hint", curLang() === "java" ? "Tip: the answer can be larger than 2,147,483,647, so use long instead of int." : "Tip: the answer can be larger than 2,147,483,647, so use long long instead of int."));
   q.samples.forEach((t, i) => {
     st.append(el("h3", null, "Sample " + (i + 1)));
     const g = el("div", "samples"), a = el("div"), b = el("div");
@@ -532,10 +539,10 @@ function renderCode(q){
   const ide = el("div", "ide");
   const bar = el("div", "ide-bar");
   const reset = el("button", "btn ghost", "Reset code"); reset.type = "button";
-  bar.append(el("span", "langsel", "Python 3"), el("span", "spacer"), reset);
+  bar.append(el("span", "langsel", LANGNAME[curLang()]), el("span", "spacer"), reset);
   const ed = el("div", "editor"), gut = el("pre", "gutter"), ta = el("textarea");
   ta.id = "code-" + q.id; ta.spellcheck = false; ta.autocapitalize = "off"; ta.setAttribute("autocorrect", "off"); ta.setAttribute("aria-label", "Code editor");
-  ta.value = S.code[q.id] != null ? S.code[q.id] : q.starter;
+  ta.value = S.code[q.id] != null ? S.code[q.id] : starterOf(q);
   ed.append(gut, ta);
   const syncG = () => { const n = ta.value.split("\n").length; let s = ""; for (let i = 1; i <= n; i++) s += i + "\n"; gut.textContent = s; gut.scrollTop = ta.scrollTop; };
   syncG();
@@ -554,12 +561,12 @@ function renderCode(q){
       e.preventDefault();
       const ls = v.lastIndexOf("\n", s - 1) + 1, line = v.slice(ls, s);
       let ind = (line.match(/^[ \t]*/) || [""])[0];
-      if (/:\s*(#.*)?$/.test(line)) ind += "    ";
+      if (isPy() ? /:\s*(#.*)?$/.test(line) : /\{\s*(\/\/.*)?$/.test(line)) ind += "    ";
       ta.setRangeText("\n" + ind, s, en, "end");
       ta.dispatchEvent(new Event("input"));
     }
   });
-  reset.onclick = () => ask("Reset code?", "This replaces your code for " + q.id + " with the starter code.", "Reset", () => { ta.value = q.starter; ta.dispatchEvent(new Event("input")); });
+  reset.onclick = () => ask("Reset code?", "This replaces your code for " + q.id + " with the starter code.", "Reset", () => { ta.value = starterOf(q); ta.dispatchEvent(new Event("input")); });
 
   const acts = el("div", "ide-actions");
   const status = el("span", "status", "Run code checks the samples and the hidden tests.");
@@ -568,6 +575,7 @@ function renderCode(q){
   const res = el("div", "results"); res.hidden = true;
   ide.append(bar, ed, acts, res);
   wrap.append(st, ide);
+  if (!isPy()){ runB.hidden = true; status.textContent = "Java and C++ code is saved as you type. Your teacher runs it against the tests after the test, so test it carefully in your head or on paper."; return wrap; }
   if (S.runs[q.id] && S.runs[q.id].code === ta.value) showResults(res, S.runs[q.id]);
 
   runB.onclick = async () => {
@@ -586,7 +594,7 @@ function renderCode(q){
       let st = "fail", msg = "";
       if (o.timeout){ st = "tle"; msg = "Time limit exceeded (" + LIMIT_MS / 1000 + " s). Your program is too slow or never stops."; }
       else if (!o.ok) msg = cleanErr(o.err);
-      else if (isS ? norm(o.out) === norm(t.out) : (await fp(q.id, norm(o.out))) === t.h) st = "pass";
+      else if (isS ? norm(o.out) === norm(t.out) : (await fp(q.id + ":" + (i - ns), norm(o.out))) === t.h) st = "pass";
       else if (!isS) msg = "Your output didn't match the expected answer.";
       if (st === "pass"){ r.passed++; if (isS) r.sPassed++; else r.hPassed++; }
       r.cases.push(isS ? { st, msg, in:t.in, exp:t.out, got:(o.out || "").slice(0, 2000) } : { st, msg, hidden:true });
@@ -659,15 +667,16 @@ function buildRecord(){
     if (q.type === "mcq") answers[q.id] = a != null ? "abcd"[+a] : "";
     else if (q.type === "trace") answers[q.id] = a || "";
     else if (q.type === "num") answers[q.id] = a ? String(a.v || "") : "";
+    else if (q.type === "short") answers[q.id] = String(a || "").trim().slice(0, 40);
     else if (q.type === "multi") answers[q.id] = q.parts.map((_, i) => (a && a[i]) || "");
   }
   const code = {}, samples = {};
   for (const q of Q.filter(x => x.type === "code")){
     code[q.id] = (S.code[q.id] != null ? S.code[q.id] : "").slice(0, 8000);
-    const r = S.runs[q.id]; samples[q.id] = r && r.code === code[q.id] ? r.passed + "/" + r.total : "not run";
+    const r = S.runs[q.id]; samples[q.id] = !isPy() ? "teacher checks" : r && r.code === code[q.id] ? r.passed + "/" + r.total : "not run";
   }
   return { id:S.sid, name:S.name, section:S.section, startedAt:new Date(S.startedAt).toISOString(), submittedAt:new Date().toISOString(),
-    minutes:Math.max(1, Math.round((Date.now() - S.startedAt) / 60000)), answers, strategy:(S.answers.C1 && S.answers.C1.why) || "", code, samples };
+    minutes:Math.max(1, Math.round((Date.now() - S.startedAt) / 60000)), lang:curLang(), answers, strategy:(S.answers.B1 && S.answers.B1.why) || "", code, samples };
 }
 function confirmFinish(){
   const missing = Q.filter(q => !answered(q)).map(q => q.id);
@@ -715,10 +724,10 @@ $("startBtn").onclick = () => {
   const n = $("nameIn").value.trim(), s = $("secIn").value.trim();
   if (n.length < 2){ $("startErr").textContent = "Enter your full name to start."; $("nameIn").focus(); return; }
   if (!s){ $("startErr").textContent = "Enter your grade and section to start."; $("secIn").focus(); return; }
-  S.name = n; S.section = s; if (!S.startedAt) S.startedAt = Date.now(); save();
+  S.name = n; S.section = s; if (!S.startedAt){ S.startedAt = Date.now(); S.lang = "python"; } save();
   enterExam();
 };
-function enterExam(){ show("examView"); updateTop(true); renderSide(); renderMain(); startTimer(); Runner.init().catch(() => {}); }
+function enterExam(){ show("examView"); updateTop(true); renderSide(); renderMain(); startTimer(); if (isPy()) Runner.init().catch(() => {}); }
 $("finishBtn").onclick = confirmFinish;
 $("modal").addEventListener("click", e => { if (e.target === $("modal")) $("modal").hidden = true; });
 document.addEventListener("keydown", e => { if (e.key === "Escape") $("modal").hidden = true; });

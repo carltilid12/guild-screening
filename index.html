@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Guild Screening Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: sticky top bar; sidebar question list beside a work area; coding questions split statement | editor like a judge IDE */
+:root{
+  --bg:#f3f6f4; --surface:#ffffff; --sunk:#eaefec; --fg:#15201b; --muted:#5a6a63; --line:#d7e0db;
+  --accent:#16834f; --accent-strong:#0f6b40; --accent-soft:#dff1e7; --on-accent:#ffffff;
+  --pass:#16834f; --fail:#c0392f; --fail-soft:#fbe5e3; --warn:#a86a12; --warn-soft:#fbefd9;
+  --code-bg:#f8faf9; --code-fg:#1b2a23; --gutter:#9aaba3; --focus:#2f7de1;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1412; --surface:#151d1a; --sunk:#1b2521; --fg:#e4ebe7; --muted:#93a39c; --line:#27342e;
+  --accent:#36c07c; --accent-strong:#5bd394; --accent-soft:#16301f; --on-accent:#08130d;
+  --pass:#47c987; --fail:#f07468; --fail-soft:#3a1b18; --warn:#e2a94a; --warn-soft:#352812;
+  --code-bg:#0b100e; --code-fg:#d9e6df; --gutter:#5b6b64; --focus:#6aa8ff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1412; --surface:#151d1a; --sunk:#1b2521; --fg:#e4ebe7; --muted:#93a39c; --line:#27342e;
+  --accent:#36c07c; --accent-strong:#5bd394; --accent-soft:#16301f; --on-accent:#08130d;
+  --pass:#47c987; --fail:#f07468; --fail-soft:#3a1b18; --warn:#e2a94a; --warn-soft:#352812;
+  --code-bg:#0b100e; --code-fg:#d9e6df; --gutter:#5b6b64; --focus:#6aa8ff; color-scheme:dark}
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+code,pre{font-family:var(--mono);font-size:13px}
+h1,h2,h3{font-family:var(--display);line-height:1.2;text-wrap:balance;margin:0}
+
+/* top bar */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:16px;min-height:56px;padding-block:8px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:-.01em}
+.brand .mark{width:28px;height:28px;border-radius:7px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-family:var(--mono);font-size:13px;font-weight:600}
+.topbar .spacer{flex:1}
+.who{color:var(--muted);font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.timer{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600;padding:4px 10px;border-radius:6px;background:var(--sunk)}
+.timer.low{background:var(--warn-soft);color:var(--warn)}
+.btn{border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;white-space:nowrap}
+.btn:hover{background:var(--sunk)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{background:var(--accent-strong);border-color:var(--accent-strong)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn.ghost{border-color:transparent;background:transparent}
+
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px}
+
+/* start + done */
+.panel{max-width:720px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:28px}
+.panel h1{font-size:30px;margin-bottom:6px}
+.lead{color:var(--muted);margin:0 0 20px}
+.overview{width:100%;border-collapse:collapse;margin:8px 0 22px;font-size:14px}
+.overview th,.overview td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+.overview th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+.overview td.n{text-align:right;font-variant-numeric:tabular-nums}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.field label{display:block;font-weight:700;font-size:13px;margin-bottom:4px}
+.field input{width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--code-bg);border-radius:6px;padding:9px 11px}
+.rules{margin:0 0 22px;padding-left:20px;color:var(--muted);font-size:14px}
+.rules li{margin-bottom:4px}
+.note{font-size:13px;color:var(--muted)}
+.err{color:var(--fail);font-size:14px;min-height:1.4em}
+
+/* exam layout */
+.exam{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:calc(100% - 57px)}
+.side{border-right:1px solid var(--line);background:var(--surface);padding:16px 10px 24px max(10px,env(safe-area-inset-left,0px));position:sticky;top:calc(57px + env(safe-area-inset-top,0px));align-self:start;max-height:calc(100vh - 57px);overflow:auto;box-sizing:border-box}
+.side h4{font-family:var(--body);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:14px 8px 6px;display:flex;justify-content:space-between}
+.side h4:first-child{margin-top:0}
+.qlink{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:transparent;padding:7px 8px;border-radius:6px;cursor:pointer;font-size:14px}
+.qlink:hover{background:var(--sunk)}
+.qlink.on{background:var(--accent-soft);font-weight:700}
+.qlink .dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--gutter);flex:none;box-sizing:border-box}
+.qlink .dot.done{background:var(--accent);border-color:var(--accent)}
+.qlink .dot.part{background:linear-gradient(90deg,var(--warn) 50%,transparent 50%);border-color:var(--warn)}
+.qlink .lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qlink .tag{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.progress{margin:18px 8px 0;font-size:13px;color:var(--muted)}
+.bar{height:6px;background:var(--sunk);border-radius:3px;overflow:hidden;margin-top:6px}
+.bar>i{display:block;height:100%;background:var(--accent);width:0}
+
+.main{padding:22px max(16px,env(safe-area-inset-right,0px)) 40px 24px;min-width:0}
+.crumb{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;margin-bottom:6px}
+.qhead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.qhead h2{font-size:24px}
+.pts{font-size:13px;color:var(--muted);font-family:var(--mono)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px;max-width:760px}
+.prompt{margin:0 0 14px;max-width:65ch}
+.prompt code{background:var(--sunk);padding:1px 5px;border-radius:4px}
+pre.snippet{background:var(--code-bg);color:var(--code-fg);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto;margin:0 0 16px;line-height:1.55}
+.lang{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;background:var(--sunk);color:var(--muted);margin-bottom:8px;letter-spacing:.03em}
+.lang.java{background:var(--warn-soft);color:var(--warn)}
+.opts{display:grid;gap:8px}
+.opt{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:8px;padding:11px 14px;cursor:pointer;background:var(--surface)}
+.opt:hover{border-color:var(--gutter)}
+.opt input{accent-color:var(--accent);width:16px;height:16px;margin:0}
+.opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+.opt .k{font-family:var(--mono);font-size:12px;color:var(--muted);width:14px}
+.answer label{display:block;font-weight:700;font-size:13px;margin:0 0 6px}
+.answer input,.answer textarea{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--code-bg);font-family:var(--mono);font-size:14px}
+.answer textarea{font-family:var(--body);min-height:96px;resize:vertical}
+.answer + .answer{margin-top:14px}
+.hint{font-size:13px;color:var(--muted);margin-top:6px}
+.navrow{display:flex;justify-content:space-between;gap:10px;margin-top:18px;max-width:760px}
+.saved{font-size:13px;color:var(--muted);align-self:center}
+
+/* coding */
+.ide-wrap{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:16px;align-items:start}
+.statement{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;min-width:0}
+.statement h3{font-family:var(--body);font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:18px 0 6px}
+.statement p{margin:0 0 10px;max-width:65ch}
+.statement pre{background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin:0 0 10px;overflow-x:auto}
+.samples{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.samples div{min-width:0}
+.samples .cap{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:4px}
+.ide{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0;display:flex;flex-direction:column}
+.ide-bar{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--sunk);font-size:13px}
+.ide-bar .langsel{font-family:var(--mono);font-weight:600}
+.ide-bar .spacer{flex:1}
+.editor{display:flex;background:var(--code-bg);height:360px;position:relative}
+.gutter{margin:0;padding:12px 8px 12px 12px;text-align:right;color:var(--gutter);font-family:var(--mono);font-size:13px;line-height:20px;overflow:hidden;user-select:none;min-width:28px;border-right:1px solid var(--line);white-space:pre}
+.editor textarea{flex:1;min-width:0;border:0;resize:none;background:transparent;color:var(--code-fg);font-family:var(--mono);font-size:13px;line-height:20px;padding:12px;outline:none;white-space:pre;overflow:auto;tab-size:4}
+.ide-actions{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid var(--line);flex-wrap:wrap}
+.ide-actions .status{flex:1;min-width:0;font-size:13px;color:var(--muted)}
+.results{border-top:1px solid var(--line);padding:14px 12px}
+.results[hidden]{display:none!important}
+.sum{font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sum.ok{color:var(--pass)} .sum.bad{color:var(--fail)}
+.tcs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tc{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:5px 10px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.tc .s{width:8px;height:8px;border-radius:50%}
+.tc.pass .s{background:var(--pass)} .tc.fail .s{background:var(--fail)} .tc.tle .s{background:var(--warn)}
+.tc.on{border-color:var(--fg)}
+.tcd .row{margin-bottom:10px}
+.tcd .cap{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:4px}
+.tcd pre{margin:0;background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;max-height:160px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+.tcd pre.errtxt{color:var(--fail);background:var(--fail-soft)}
+.locked{font-size:13px;color:var(--muted)}
+.spin{width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;display:inline-block;animation:sp .8s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:3s}}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(10,16,13,.55);display:grid;place-items:center;z-index:20;padding:16px}
+.modal .box{background:var(--surface);border:1px solid var(--line);border-radius:10px;max-width:460px;width:100%;padding:22px;box-sizing:border-box}
+.modal h3{font-size:20px;margin-bottom:8px}
+.modal p{margin:0 0 14px;color:var(--muted)}
+.modal .acts{display:flex;justify-content:flex-end;gap:10px}
+.modal ul{margin:0 0 14px;padding-left:18px;font-size:14px}
+
+/* results (teacher) */
+.res-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.res-head h1{font-size:26px}
+.tablebox{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table.res{border-collapse:collapse;width:100%;font-size:14px;min-width:760px}
+table.res th,table.res td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+table.res th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+table.res td.n{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:13px}
+table.res tbody tr{cursor:pointer}
+table.res tbody tr:hover{background:var(--sunk)}
+.tier{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700}
+.tier.t1{background:var(--accent-soft);color:var(--accent-strong)}
+.tier.t2{background:var(--warn-soft);color:var(--warn)}
+.tier.t3{background:var(--sunk);color:var(--muted)}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.detail{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px}
+.detail h2{font-size:20px;margin-bottom:10px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:14px}
+.dgrid div{background:var(--sunk);border-radius:6px;padding:8px 10px;font-size:13px}
+.dgrid b{display:block;font-family:var(--mono)}
+.detail pre{background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:10px 12px;overflow-x:auto;margin:4px 0 14px}
+.copybox textarea{width:100%;box-sizing:border-box;min-height:140px;font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:6px;padding:10px;background:var(--code-bg)}
+
+@media (max-width:1100px){.ide-wrap{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:820px){
+  .exam{grid-template-columns:minmax(0,1fr)}
+  .side{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));display:flex;gap:6px;overflow-x:auto}
+  .side h4,.progress{display:none}
+  .qlink{width:auto;flex:none}
+  .qlink .lbl{display:none}
+  .main{padding:18px max(16px,env(safe-area-inset-right,0px)) 32px max(16px,env(safe-area-inset-left,0px))}
+  .fields,.samples{grid-template-columns:minmax(0,1fr)}
+  .editor{height:300px}
+  .panel{padding:20px}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><span class="mark">&gt;_</span>Guild Screening</div>
+  <div class="spacer"></div>
+  <span class="who" id="who"></span>
+  <span class="timer" id="timer" hidden>60:00</span>
+  <button class="btn primary" id="finishBtn" hidden>Submit test</button>
+</header>
+
+<section id="startView" class="wrap">
+  <div class="panel">
+    <h1>Guild Screening Test</h1>
+    <p class="lead">This test checks your problem-solving for the hackathon and informatics olympiad guild. Answer what you can; the later problems are meant to be hard.</p>
+    <table class="overview">
+      <thead><tr><th>Part</th><th>Focus</th><th class="n">Items</th><th class="n">Points</th></tr></thead>
+      <tbody>
+        <tr><td>A</td><td>CS fundamentals (multiple choice)</td><td class="n">5</td><td class="n">5</td></tr>
+        <tr><td>B</td><td>Code tracing</td><td class="n">5</td><td class="n">10</td></tr>
+        <tr><td>C</td><td>Logic</td><td class="n">2</td><td class="n">5</td></tr>
+        <tr><td>D</td><td>Coding</td><td class="n">2</td><td class="n">14</td></tr>
+        <tr><td>E</td><td>Problems</td><td class="n">2</td><td class="n">16</td></tr>
+        <tr><td></td><td><b>Total</b></td><td class="n">16</td><td class="n"><b>50</b></td></tr>
+      </tbody>
+    </table>
+    <div class="fields">
+      <div class="field"><label for="nameIn">Full name</label><input id="nameIn" autocomplete="name" placeholder="First Name Last Name"></div>
+      <div class="field"><label for="secIn">Grade and section</label><input id="secIn" placeholder="Grade 10 - Neutron"></div>
+    </div>
+    <ul class="rules">
+      <li>You have 60 minutes. The test submits itself when time runs out.</li>
+      <li>Coding answers are written in Python 3. Read input with <code>input()</code> and print the answer.</li>
+      <li><b>Run code</b> checks your program against the sample tests. After you submit, your code is also checked against hidden tests, including very large inputs, so efficient solutions score higher.</li>
+      <li>Your work is saved in this browser as you go. Do not open other websites during the test.</li>
+    </ul>
+    <p class="err" id="startErr"></p>
+    <button class="btn primary" id="startBtn">Start test</button>
+  </div>
+</section>
+
+<section id="examView" class="exam" hidden>
+  <nav class="side" id="side" aria-label="Questions"></nav>
+  <main class="main" id="main"></main>
+</section>
+
+<section id="doneView" class="wrap" hidden>
+  <div class="panel" id="donePanel"></div>
+</section>
+
+<div class="modal" id="modal" hidden><div class="box" id="modalBox"></div></div>
+
+<script>
+(() => {
+"use strict";
+const SK = ["https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js","https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"];
+/* ===== SETUP: paste your Google Apps Script web app URL between the quotes ===== */
+const SUBMIT_URL = "PASTE_YOUR_APPS_SCRIPT_URL_HERE";
+/* ============================================================================== */
+const DURATION_MIN = 60, LIMIT_MS = 6000, STORE_KEY = "guild-screening-gh-v1";
+const $ = id => document.getElementById(id);
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+
+/* ---------- questions (no answer keys or hidden tests live on this page) ---------- */
+const STARTER = "# Read input with input() and print your answer.\nn = int(input())\n\nprint(n)\n";
+const STARTER_LIST = "# Read input with input() and print your answer.\nn = int(input())\nnums = list(map(int, input().split()))\n\nprint(n)\n";
+const Q = [
+  { id:"A1", part:"A", type:"mcq", pts:1, title:"Last in, first out", prompt:"Which data structure follows Last-In, First-Out (LIFO) order?", opts:["Queue","Stack","Linked list","Hash table"] },
+  { id:"A2", part:"A", type:"mcq", pts:1, title:"String length", prompt:'In Python, what is <code>len("hackathon")</code>?', opts:["8","9","10","Error"] },
+  { id:"A3", part:"A", type:"mcq", pts:1, title:"Negative modulo", prompt:"In Python, what is <code>-7 % 3</code>?", opts:["-1","1","2","-2"] },
+  { id:"A4", part:"A", type:"mcq", pts:1, title:"Binary search", prompt:"Binary search on a sorted list of 1,000,000 numbers needs at most about how many comparisons?", opts:["10","20","1,000","500,000"] },
+  { id:"A5", part:"A", type:"mcq", pts:1, title:"Time complexity", prompt:"What is the time complexity of this code?", code:"for i in range(n):\n    for j in range(i):\n        print(i, j)", lang:"Python", opts:["O(n)","O(n log n)","O(n²)","O(2ⁿ)"] },
+
+  { id:"B1", part:"B", type:"trace", pts:2, title:"Sort and slice", lang:"Python", code:"x = [3, 1, 4, 1, 5]\nx.sort()\nprint(x[1:4])" },
+  { id:"B2", part:"B", type:"trace", pts:2, title:"Stepping loop", lang:"Python", code:"total = 0\nfor i in range(1, 10, 3):\n    total += i\nprint(total // 5, total % 5)" },
+  { id:"B3", part:"B", type:"trace", pts:2, title:"Recursion", lang:"Python", code:"def f(n):\n    if n <= 1:\n        return n\n    return f(n - 1) + f(n - 2)\n\nprint(f(7))" },
+  { id:"B4", part:"B", type:"trace", pts:2, title:"Counting letters", lang:"Python", code:'s = "informatics"\ncount = {}\nfor ch in s:\n    count[ch] = count.get(ch, 0) + 1\nprint(max(count, key=count.get), len(count))' },
+  { id:"B5", part:"B", type:"trace", pts:2, title:"Array references", lang:"Java", note:"Assume this runs inside main.", code:"int[] a = {1, 2, 3};\nint[] b = a;\nint[] c = a.clone();\nb[0] = 9;\nc[1] = 7;\nSystem.out.println(a[0] + a[1] + \" \" + c[0]);" },
+
+  { id:"C1", part:"C", type:"num", pts:3, title:"The heavy coin", prompt:"You have 9 identical-looking coins. One is slightly heavier. Using a balance scale, what is the minimum number of weighings that always finds the heavy coin?", explain:"Describe your strategy (your teacher reads this)." },
+  { id:"C2", part:"C", type:"multi", pts:2, title:"Greedy change", prompt:"A country has coins worth 1, 4, and 6 pesos. You want to make 8 pesos using the fewest coins.", parts:[
+      "A greedy cashier always takes the largest coin that fits. How many coins does the cashier use?",
+      "What is the actual minimum number of coins?" ] },
+
+  { id:"D1", part:"D", type:"code", pts:6, title:"Divisor Sum", starter:STARTER,
+    body:[["p","Given a positive integer N, print the sum of all of its positive divisors, including 1 and N itself."],
+          ["h","Input"],["p","One line with the integer N (1 ≤ N ≤ 1,000,000,000)."],
+          ["h","Output"],["p","One integer: the sum of the divisors of N."],
+          ["h","Explanation"],["p","The divisors of 12 are 1, 2, 3, 4, 6 and 12, so the answer is 28."]],
+    samples:[{in:"12",out:"28"},{in:"6",out:"12"}] },
+  { id:"D2", part:"D", type:"code", pts:8, title:"Prime Sum", starter:STARTER,
+    body:[["p","Given an integer N, print the sum of all prime numbers less than or equal to N."],
+          ["h","Input"],["p","One line with the integer N (1 ≤ N ≤ 200,000)."],
+          ["h","Output"],["p","One integer: the sum of all primes up to N. Print 0 if there are none."],
+          ["h","Explanation"],["p","The primes up to 10 are 2, 3, 5 and 7, which add up to 17."]],
+    samples:[{in:"10",out:"17"},{in:"20",out:"77"}] },
+  { id:"E1", part:"E", type:"code", pts:6, title:"Lucky Plates", starter:STARTER_LIST,
+    body:[["p","A jeepney plate number is lucky if the sum of its digits is divisible by 7. Given N plate numbers, count how many are lucky."],
+          ["h","Input"],["p","The first line has N (1 ≤ N ≤ 50,000). The second line has N integers, each between 1 and 1,000,000,000."],
+          ["h","Output"],["p","One integer: the number of lucky plates."],
+          ["h","Explanation"],["p","In the first sample, 16, 70 and 124 each have a digit sum of 7. The digit sums of 23 and 99 are 5 and 18."]],
+    samples:[{in:"5\n16 23 70 99 124",out:"3"},{in:"3\n7 70 700",out:"3"}] },
+  { id:"E2", part:"E", type:"code", pts:10, title:"Best Streak", starter:STARTER_LIST,
+    body:[["p","A team's score change for each of N days is given, and it can be negative. Find the largest total score change over any run of one or more consecutive days."],
+          ["h","Input"],["p","The first line has N (1 ≤ N ≤ 100,000). The second line has N integers, each between −10,000 and 10,000."],
+          ["h","Output"],["p","One integer: the largest possible sum of a run of consecutive days."],
+          ["h","Explanation"],["p","In the first sample, the run 4, −1, 2, 1 adds up to 6, and no other run does better."]],
+    samples:[{in:"9\n-2 1 -3 4 -1 2 1 -5 4",out:"6"},{in:"5\n1 2 3 4 5",out:"15"}] }
+];
+const PARTS = { A:"Part A · Fundamentals", B:"Part B · Code Tracing", C:"Part C · Logic", D:"Part D · Coding", E:"Part E · Problems" };
+const byId = Object.fromEntries(Q.map(q => [q.id, q]));
+
+/* ---------- state ---------- */
+let S = load() || { name:"", section:"", startedAt:0, answers:{}, code:{}, runs:{}, current:"A1", submitted:false };
+if (!S.sid) S.sid = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+function load(){ try { const r = localStorage.getItem(STORE_KEY); return r ? JSON.parse(r) : null; } catch { return null; } }
+let saveT = 0;
+function save(){ clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch {} }, 250); }
+
+/* Skulpt 1.2 builds every range() as a full list; huge ranges (a naive loop to 10^9) would exhaust memory
+   instead of hitting the time limit. Ranges over 2 million items get a lazy backing array instead. */
+function patchRange(Sk){
+  var R = Sk.builtin.range_; if (!R || R.__lazy) return; var orig = R.prototype.tp$new;
+  R.prototype.tp$new = function(args, kw){
+    if (args.length >= 1 && args.length <= 3 && args.every(function(a){ return a instanceof Sk.builtin.int_ && typeof a.v === "number"; })){
+      var v = args.map(function(a){ return a.v; }), start, stop, step;
+      if (v.length === 1){ start = 0; stop = v[0]; step = 1; } else { start = v[0]; stop = v[1]; step = v.length === 3 ? v[2] : 1; }
+      if (step !== 0){
+        var n = step > 0 ? Math.max(0, Math.ceil((stop - start) / step)) : Math.max(0, Math.ceil((start - stop) / -step));
+        if (n > 2000000){
+          var lazy = new Proxy([], { get: function(t, k){
+            if (k === "length") return n;
+            if (typeof k === "string" && /^\d+$/.test(k)){ var i = +k; return i < n ? new Sk.builtin.int_(start + i * step) : undefined; }
+            if (k === "slice") return function(){ throw new Sk.builtin.ValueError("range is too large to turn into a list"); };
+            return Reflect.get(t, k); } });
+          return new R(start, stop, step, lazy);
+        }
+      }
+    }
+    return orig.call(this, args, kw);
+  };
+  R.__lazy = true;
+}
+const WORKER_SRC = `self.window=self;importScripts(${JSON.stringify(SK[0])},${JSON.stringify(SK[1])});(${patchRange.toString()})(Sk);
+self.onmessage=async function(e){var d=e.data,lines=d.input.split("\\n"),i=0,out="";
+Sk.configure({output:function(t){if(out.length<200000)out+=t;},read:function(f){if(Sk.builtinFiles===undefined||Sk.builtinFiles.files[f]===undefined)throw "File not found: '"+f+"'";return Sk.builtinFiles.files[f];},inputfun:function(){return i<lines.length?lines[i++]:"";},inputfunTakesPrompt:true,execLimit:d.limit,yieldLimit:null,__future__:Sk.python3,killableWhile:true,killableFor:true});
+var t0=Date.now();try{await Sk.misceval.asyncToPromise(function(){return Sk.importMainWithBody("<stdin>",false,d.code,true);});postMessage({id:d.id,ok:true,out:out,ms:Date.now()-t0});}
+catch(err){postMessage({id:d.id,ok:false,out:out,err:String(err),timeout:(err instanceof Sk.builtin.TimeLimitError),ms:Date.now()-t0});}};
+postMessage({ready:true});`;
+const Runner = (() => {
+  let worker = null, mode = null, readyP = null, seq = 0;
+  function startWorker(){
+    return new Promise((res, rej) => {
+      let w; try { w = new Worker(URL.createObjectURL(new Blob([WORKER_SRC], { type:"text/javascript" }))); } catch (e) { rej(e); return; }
+      const to = setTimeout(() => { w.terminate(); rej(new Error("worker timeout")); }, 25000);
+      w.onmessage = e => { if (e.data && e.data.ready){ clearTimeout(to); w.onmessage = null; res(w); } };
+      w.onerror = e => { clearTimeout(to); if (e.preventDefault) e.preventDefault(); w.terminate(); rej(e); };
+    });
+  }
+  function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("Could not load " + src)); document.head.appendChild(s); }); }
+  function init(){
+    if (readyP) return readyP;
+    readyP = (async () => {
+      if (mode !== "main"){ try { worker = await startWorker(); mode = "worker"; return; } catch (e) { if (mode === "worker") throw e; } }
+      if (!window.Sk || !window.Sk.builtinFiles){ await loadScript(SK[0]); await loadScript(SK[1]); }
+      patchRange(window.Sk);
+      mode = "main";
+    })();
+    readyP.catch(() => { readyP = null; });
+    return readyP;
+  }
+  async function runMain(code, input, limit){
+    await new Promise(r => setTimeout(r, 30));
+    const Sk = window.Sk, lines = input.split("\n"); let i = 0, out = "";
+    Sk.configure({ output:t => { if (out.length < 200000) out += t; }, read:f => { if (!Sk.builtinFiles || Sk.builtinFiles.files[f] === undefined) throw "File not found: '" + f + "'"; return Sk.builtinFiles.files[f]; },
+      inputfun:() => i < lines.length ? lines[i++] : "", inputfunTakesPrompt:true, execLimit:limit, yieldLimit:null, __future__:Sk.python3, killableWhile:true, killableFor:true });
+    const t0 = Date.now();
+    try { await Sk.misceval.asyncToPromise(() => Sk.importMainWithBody("<stdin>", false, code, true)); return { ok:true, out, ms:Date.now() - t0 }; }
+    catch (err) { return { ok:false, out, err:String(err), timeout:(err instanceof Sk.builtin.TimeLimitError), ms:Date.now() - t0 }; }
+  }
+  async function run(code, input, limit = LIMIT_MS){
+    await init();
+    if (mode !== "worker") return runMain(code, input, limit);
+    const w = worker, id = ++seq;
+    return new Promise(res => {
+      let done = false;
+      const kill = setTimeout(() => { if (done) return; done = true; w.terminate(); worker = null; readyP = null; res({ ok:false, timeout:true, out:"", err:"Time limit exceeded" }); }, limit + 4000);
+      const h = e => { if (!e.data || e.data.id !== id) return; done = true; clearTimeout(kill); w.removeEventListener("message", h); res(e.data); };
+      w.addEventListener("message", h);
+      w.postMessage({ id, code, input, limit });
+    });
+  }
+  return { init, run };
+})();
+
+
+
+const norm = s => String(s).replace(/\r/g, "").split("\n").map(l => l.replace(/\s+$/, "")).join("\n").replace(/^\n+|\n+$/g, "");
+function cleanErr(e){ return String(e || "").replace(/ on line (\d+)/, " (line $1)").replace(/^Error: /, ""); }
+
+function answered(q){
+  const a = S.answers[q.id];
+  if (q.type === "mcq") return a != null ? "done" : "";
+  if (q.type === "trace") return a && a.trim() ? "done" : "";
+  if (q.type === "num") return a && String(a.v || "").trim() ? "done" : "";
+  if (q.type === "multi"){ const n = q.parts.filter((_, i) => a && String(a[i] || "").trim()).length; return n === q.parts.length ? "done" : n ? "part" : ""; }
+  if (q.type === "code"){
+    const c = S.code[q.id]; if (c == null || c === q.starter) return "";
+    const r = S.runs[q.id]; return r && r.code === c && r.passed === r.total ? "done" : "part";
+  }
+  return "";
+}
+
+/* ---------- views ---------- */
+function show(view){ for (const v of ["startView","examView","doneView"]) $(v).hidden = v !== view; window.scrollTo(0, 0); }
+function updateTop(inExam){
+  $("who").textContent = S.name ? S.name + (S.section ? " · " + S.section : "") : "";
+  $("timer").hidden = !inExam; $("finishBtn").hidden = !inExam;
+}
+function renderSide(){
+  const side = $("side"); side.textContent = "";
+  let last = "";
+  for (const q of Q){
+    if (q.part !== last){ last = q.part; const h = el("h4"); h.append(el("span", null, PARTS[q.part])); side.append(h); }
+    const b = el("button", "qlink" + (S.current === q.id ? " on" : ""));
+    b.type = "button"; b.setAttribute("aria-current", S.current === q.id ? "true" : "false");
+    b.append(el("span", "dot " + answered(q)), el("span", "tag", q.id), el("span", "lbl", q.title));
+    b.onclick = () => go(q.id);
+    side.append(b);
+  }
+  const n = Q.filter(q => answered(q)).length;
+  const p = el("div", "progress", n + " of " + Q.length + " attempted");
+  const bar = el("div", "bar"), fill = el("i"); fill.style.width = (n / Q.length * 100) + "%"; bar.append(fill); p.append(bar);
+  side.append(p);
+}
+function go(id){ S.current = id; save(); renderSide(); renderMain(); window.scrollTo(0, 0); }
+function head(q){
+  const f = document.createDocumentFragment();
+  f.append(el("div", "crumb", PARTS[q.part]));
+  const h = el("div", "qhead"); h.append(el("h2", null, q.id + ". " + q.title), el("span", "pts", q.pts + (q.pts === 1 ? " point" : " points")));
+  f.append(h); return f;
+}
+function navRow(q){
+  const i = Q.indexOf(q), r = el("div", "navrow");
+  const prev = el("button", "btn", "← Previous"); prev.type = "button"; prev.disabled = i === 0; prev.onclick = () => go(Q[i - 1].id);
+  const next = el("button", "btn", i === Q.length - 1 ? "Review and submit" : "Next →"); next.type = "button";
+  next.onclick = () => i === Q.length - 1 ? confirmFinish() : go(Q[i + 1].id);
+  r.append(prev, el("span", "saved", "Saved automatically"), next);
+  return r;
+}
+function snippet(code, lang, note){
+  const f = document.createDocumentFragment();
+  if (lang) f.append(el("span", "lang" + (lang === "Java" ? " java" : ""), lang));
+  if (note) f.append(el("p", "hint", note));
+  f.append(el("pre", "snippet", code));
+  return f;
+}
+function renderMain(){
+  const q = byId[S.current] || Q[0], m = $("main"); m.textContent = "";
+  m.append(head(q));
+  if (q.type === "code"){ m.append(renderCode(q), navRow(q)); return; }
+  const card = el("div", "card");
+  if (q.type === "mcq"){
+    const p = el("p", "prompt"); p.innerHTML = q.prompt; card.append(p);
+    if (q.code) card.append(snippet(q.code, q.lang));
+    const box = el("div", "opts"); box.setAttribute("role", "radiogroup");
+    q.opts.forEach((o, i) => {
+      const lab = el("label", "opt" + (String(S.answers[q.id]) === String(i) ? " sel" : ""));
+      const r = el("input"); r.type = "radio"; r.name = "opt-" + q.id; r.id = "opt-" + q.id + "-" + i; r.checked = String(S.answers[q.id]) === String(i);
+      r.onchange = () => { S.answers[q.id] = String(i); save(); box.querySelectorAll(".opt").forEach((x, j) => x.classList.toggle("sel", j === i)); renderSide(); };
+      lab.append(r, el("span", "k", "abcd"[i]), el("span", null, o));
+      box.append(lab);
+    });
+    card.append(box);
+  } else if (q.type === "trace"){
+    card.append(el("p", "prompt", "What is the exact output of this program?"));
+    card.append(snippet(q.code, q.lang, q.note));
+    const a = el("div", "answer"); const l = el("label", null, "Output"); l.htmlFor = "ans-" + q.id;
+    const i = el("input"); i.id = "ans-" + q.id; i.autocomplete = "off"; i.spellcheck = false; i.placeholder = "Type the output exactly as printed";
+    i.value = S.answers[q.id] || ""; i.oninput = () => { S.answers[q.id] = i.value; save(); renderSide(); };
+    a.append(l, i, el("p", "hint", "Spacing between values counts loosely; brackets and order must match."));
+    card.append(a);
+  } else if (q.type === "num"){
+    card.append(el("p", "prompt", q.prompt));
+    const v = S.answers[q.id] || {};
+    const a = el("div", "answer"); const l = el("label", null, "Minimum number of weighings"); l.htmlFor = "ans-" + q.id;
+    const i = el("input"); i.id = "ans-" + q.id; i.inputMode = "numeric"; i.autocomplete = "off"; i.value = v.v || "";
+    const b = el("div", "answer"); const l2 = el("label", null, q.explain); l2.htmlFor = "exp-" + q.id;
+    const t = el("textarea"); t.id = "exp-" + q.id; t.value = v.why || ""; t.placeholder = "Example: Put 3 coins on each side…";
+    const upd = () => { S.answers[q.id] = { v:i.value, why:t.value }; save(); renderSide(); };
+    i.oninput = upd; t.oninput = upd;
+    a.append(l, i); b.append(l2, t); card.append(a, b);
+  } else if (q.type === "multi"){
+    card.append(el("p", "prompt", q.prompt));
+    const v = S.answers[q.id] || [];
+    q.parts.forEach((label, k) => {
+      const a = el("div", "answer"); const l = el("label", null, (k + 1) + ". " + label); l.htmlFor = "ans-" + q.id + "-" + k;
+      const i = el("input"); i.id = "ans-" + q.id + "-" + k; i.inputMode = "numeric"; i.autocomplete = "off"; i.value = v[k] || "";
+      i.oninput = () => { const cur = (S.answers[q.id] || []).slice(); cur[k] = i.value; S.answers[q.id] = cur; save(); renderSide(); };
+      a.append(l, i); card.append(a);
+    });
+  }
+  m.append(card, navRow(q));
+}
+
+/* ---------- coding view ---------- */
+function renderCode(q){
+  const wrap = el("div", "ide-wrap");
+  const st = el("article", "statement");
+  for (const [t, txt] of q.body) st.append(t === "h" ? el("h3", null, txt) : el("p", null, txt));
+  q.samples.forEach((t, i) => {
+    st.append(el("h3", null, "Sample " + (i + 1)));
+    const g = el("div", "samples"), a = el("div"), b = el("div");
+    a.append(el("div", "cap", "Input"), el("pre", null, t.in)); b.append(el("div", "cap", "Output"), el("pre", null, t.out));
+    g.append(a, b); st.append(g);
+  });
+  const ide = el("div", "ide");
+  const bar = el("div", "ide-bar");
+  const reset = el("button", "btn ghost", "Reset code"); reset.type = "button";
+  bar.append(el("span", "langsel", "Python 3"), el("span", "spacer"), reset);
+  const ed = el("div", "editor"), gut = el("pre", "gutter"), ta = el("textarea");
+  ta.id = "code-" + q.id; ta.spellcheck = false; ta.autocapitalize = "off"; ta.setAttribute("autocorrect", "off"); ta.setAttribute("aria-label", "Code editor");
+  ta.value = S.code[q.id] != null ? S.code[q.id] : q.starter;
+  ed.append(gut, ta);
+  const syncG = () => { const n = ta.value.split("\n").length; let s = ""; for (let i = 1; i <= n; i++) s += i + "\n"; gut.textContent = s; gut.scrollTop = ta.scrollTop; };
+  syncG();
+  ta.addEventListener("scroll", () => { gut.scrollTop = ta.scrollTop; });
+  ta.addEventListener("input", () => { S.code[q.id] = ta.value; save(); syncG(); renderSide(); });
+  ta.addEventListener("keydown", e => {
+    const v = ta.value, s = ta.selectionStart, en = ta.selectionEnd;
+    if (e.key === "Tab"){
+      e.preventDefault();
+      const ls = v.lastIndexOf("\n", s - 1) + 1;
+      if (e.shiftKey){ const m = v.slice(ls).match(/^ {1,4}/); if (m){ ta.setRangeText("", ls, ls + m[0].length, "end"); ta.selectionStart = ta.selectionEnd = Math.max(ls, s - m[0].length); } }
+      else if (s !== en && v.slice(s, en).includes("\n")){ ta.setRangeText(v.slice(ls, en).replace(/^/gm, "    "), ls, en, "select"); }
+      else ta.setRangeText("    ", s, en, "end");
+      ta.dispatchEvent(new Event("input"));
+    } else if (e.key === "Enter" && !e.isComposing){
+      e.preventDefault();
+      const ls = v.lastIndexOf("\n", s - 1) + 1, line = v.slice(ls, s);
+      let ind = (line.match(/^[ \t]*/) || [""])[0];
+      if (/:\s*(#.*)?$/.test(line)) ind += "    ";
+      ta.setRangeText("\n" + ind, s, en, "end");
+      ta.dispatchEvent(new Event("input"));
+    }
+  });
+  reset.onclick = () => ask("Reset code?", "This replaces your code for " + q.id + " with the starter code.", "Reset", () => { ta.value = q.starter; ta.dispatchEvent(new Event("input")); });
+
+  const acts = el("div", "ide-actions");
+  const status = el("span", "status", "Hidden tests run after you submit the test.");
+  const runB = el("button", "btn primary", "Run code"); runB.type = "button";
+  acts.append(status, runB);
+  const res = el("div", "results"); res.hidden = true;
+  ide.append(bar, ed, acts, res);
+  wrap.append(st, ide);
+  if (S.runs[q.id] && S.runs[q.id].code === ta.value) showResults(res, S.runs[q.id]);
+
+  runB.onclick = async () => {
+    runB.disabled = true; res.hidden = false; res.textContent = "";
+    const prog = el("div", "sum"); prog.append(el("span", "spin"), el("span", null, " Preparing Python…")); res.append(prog);
+    try { await Runner.init(); }
+    catch { res.textContent = ""; res.append(el("div", "sum bad", "The Python runner could not load. Check your internet connection and try again.")); runB.disabled = false; return; }
+    const r = { code:ta.value, total:q.samples.length, passed:0, cases:[] };
+    for (let i = 0; i < q.samples.length; i++){
+      prog.lastChild.textContent = " Running sample " + (i + 1) + " of " + q.samples.length + "…";
+      const t = q.samples[i], o = await Runner.run(ta.value, t.in);
+      let st = "fail", msg = "";
+      if (o.timeout){ st = "tle"; msg = "Time limit exceeded (" + LIMIT_MS / 1000 + " s). Your program is too slow or never stops."; }
+      else if (!o.ok) msg = cleanErr(o.err);
+      else if (norm(o.out) === norm(t.out)) st = "pass";
+      if (st === "pass") r.passed++;
+      r.cases.push({ st, msg, in:t.in, exp:t.out, got:(o.out || "").slice(0, 2000) });
+    }
+    S.runs[q.id] = r; save(); renderSide(); showResults(res, r); runB.disabled = false;
+  };
+  return wrap;
+}
+function showResults(box, r){
+  box.hidden = false; box.textContent = "";
+  box.append(el("div", "sum " + (r.passed === r.total ? "ok" : "bad"), "Sample tests: " + r.passed + "/" + r.total + " passed"));
+  const tcs = el("div", "tcs"), det = el("div", "tcd");
+  const pick = k => {
+    tcs.querySelectorAll(".tc").forEach((b, j) => b.classList.toggle("on", j === k));
+    det.textContent = ""; const c = r.cases[k];
+    const row = (cap, txt, cls) => { const d = el("div", "row"); d.append(el("div", "cap", cap), el("pre", cls || null, txt === "" ? "(no output)" : txt)); det.append(d); };
+    row("Input", c.in); row("Your output", c.got || ""); row("Expected output", c.exp);
+    if (c.msg) row(c.st === "tle" ? "Time limit" : "Error", c.msg, "errtxt");
+  };
+  r.cases.forEach((c, k) => { const b = el("button", "tc " + c.st); b.type = "button"; b.append(el("span", "s"), el("span", null, "Sample " + (k + 1))); b.onclick = () => pick(k); tcs.append(b); });
+  box.append(tcs, det);
+  const bad = r.cases.findIndex(c => c.st !== "pass"); if (r.cases.length) pick(bad >= 0 ? bad : 0);
+}
+
+/* ---------- modal ---------- */
+function ask(title, text, okLabel, onOk, extra){
+  const box = $("modalBox"); box.textContent = "";
+  box.append(el("h3", null, title), el("p", null, text));
+  if (extra) box.append(extra);
+  const acts = el("div", "acts"), c = el("button", "btn", "Cancel"), o = el("button", "btn primary", okLabel);
+  c.type = o.type = "button";
+  c.onclick = () => { $("modal").hidden = true; };
+  o.onclick = () => { $("modal").hidden = true; onOk(); };
+  acts.append(c, o); box.append(acts);
+  $("modal").hidden = false; o.focus();
+}
+
+/* ---------- timer ---------- */
+let tick = 0, finishing = false;
+function startTimer(){
+  clearInterval(tick);
+  const t = $("timer");
+  const upd = () => {
+    const left = Math.max(0, S.startedAt + DURATION_MIN * 60000 - Date.now());
+    const m = Math.floor(left / 60000), s = Math.floor(left % 60000 / 1000);
+    t.textContent = String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+    t.classList.toggle("low", left < 5 * 60000);
+    if (left <= 0 && !S.submitted && !finishing){ clearInterval(tick); finish(true); }
+  };
+  upd(); tick = setInterval(upd, 1000);
+}
+
+/* ---------- saving (to Google Sheets through Apps Script) ---------- */
+async function sendRecord(rec){
+  if (!/^https:\/\/script\.google\.com\//.test(SUBMIT_URL)) throw new Error("not configured");
+  await fetch(SUBMIT_URL, { method:"POST", mode:"no-cors", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body:JSON.stringify(rec) });
+}
+
+function buildRecord(){
+  const answers = {};
+  for (const q of Q){
+    const a = S.answers[q.id];
+    if (q.type === "mcq") answers[q.id] = a != null ? "abcd"[+a] : "";
+    else if (q.type === "trace") answers[q.id] = a || "";
+    else if (q.type === "num") answers[q.id] = a ? String(a.v || "") : "";
+    else if (q.type === "multi") answers[q.id] = q.parts.map((_, i) => (a && a[i]) || "");
+  }
+  const code = {}, samples = {};
+  for (const q of Q.filter(x => x.type === "code")){
+    code[q.id] = (S.code[q.id] != null ? S.code[q.id] : "").slice(0, 8000);
+    const r = S.runs[q.id]; samples[q.id] = r && r.code === code[q.id] ? r.passed + "/" + r.total : "not run";
+  }
+  return { id:S.sid, name:S.name, section:S.section, startedAt:new Date(S.startedAt).toISOString(), submittedAt:new Date().toISOString(),
+    minutes:Math.max(1, Math.round((Date.now() - S.startedAt) / 60000)), answers, strategy:(S.answers.C1 && S.answers.C1.why) || "", code, samples };
+}
+function confirmFinish(){
+  const missing = Q.filter(q => !answered(q)).map(q => q.id);
+  const extra = el("div");
+  if (missing.length) extra.append(el("p", null, "Not attempted yet: " + missing.join(", ") + "."));
+  ask("Submit your test?", "You can't change your answers after submitting.", "Submit test", () => finish(false), extra);
+}
+async function finish(auto){
+  if (finishing || S.submitted) return; finishing = true;
+  clearInterval(tick);
+  show("doneView"); updateTop(false);
+  const panel = $("donePanel"); panel.textContent = "";
+  panel.append(el("h1", null, auto ? "Time is up" : "Submitting…"));
+  const p = el("p", "lead"); p.append(el("span", "spin"), document.createTextNode(" Sending your answers…")); panel.append(p);
+  const rec = buildRecord();
+  S.submitted = true; S.record = rec; save();
+  let stored = false, why = "";
+  for (let attempt = 0; attempt < 3 && !stored; attempt++){
+    try { await sendRecord(rec); stored = true; }
+    catch (e) { why = e && e.message === "not configured" ? "This test isn't connected to your teacher's sheet yet." : "Your answers couldn't be sent. Check your internet connection."; if (e && e.message === "not configured") break; await new Promise(r => setTimeout(r, 1500)); }
+  }
+  S.stored = stored; S.why = why; save();
+  renderDone(stored, why);
+  finishing = false;
+}
+function renderDone(stored, why){
+  show("doneView"); updateTop(false);
+  const panel = $("donePanel"); panel.textContent = "";
+  panel.append(el("h1", null, "Test submitted"));
+  if (stored){
+    panel.append(el("p", "lead", "Thank you, " + (S.name || "student") + ". Your answers were sent to your teacher. You can close this page."));
+    panel.append(el("p", "note", "Submission ID: " + S.sid + " · show this to your teacher if they ask."));
+    return;
+  }
+  panel.append(el("p", "lead", (why ? why + " " : "") + "Copy the summary below and send it to your teacher."));
+  const box = el("div", "copybox"), ta = el("textarea"); ta.id = "summaryOut"; ta.readOnly = true;
+  ta.value = JSON.stringify(S.record || buildRecord(), null, 1);
+  const b = el("button", "btn primary", "Copy summary"); b.type = "button"; b.style.marginTop = "12px";
+  b.onclick = async () => { try { await navigator.clipboard.writeText(ta.value); b.textContent = "Copied"; } catch { ta.focus(); ta.select(); b.textContent = "Press Ctrl+C to copy"; } };
+  box.append(ta); panel.append(box, b);
+}
+
+/* ---------- wiring ---------- */
+$("startBtn").onclick = () => {
+  const n = $("nameIn").value.trim(), s = $("secIn").value.trim();
+  if (n.length < 2){ $("startErr").textContent = "Enter your full name to start."; $("nameIn").focus(); return; }
+  if (!s){ $("startErr").textContent = "Enter your grade and section to start."; $("secIn").focus(); return; }
+  S.name = n; S.section = s; if (!S.startedAt) S.startedAt = Date.now(); save();
+  enterExam();
+};
+function enterExam(){ show("examView"); updateTop(true); renderSide(); renderMain(); startTimer(); Runner.init().catch(() => {}); }
+$("finishBtn").onclick = confirmFinish;
+$("modal").addEventListener("click", e => { if (e.target === $("modal")) $("modal").hidden = true; });
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("modal").hidden = true; });
+
+$("nameIn").value = S.name || ""; $("secIn").value = S.section || "";
+if (S.submitted) renderDone(S.stored !== false, S.why || "");
+else if (S.startedAt) enterExam();
+else show("startView");
+})();
+</script>
+</body>
+</html>

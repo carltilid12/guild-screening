@@ -214,11 +214,11 @@ table.res tbody tr:hover{background:var(--sunk)}
       <thead><tr><th>Part</th><th>Focus</th><th class="n">Items</th><th class="n">Points</th></tr></thead>
       <tbody>
         <tr><td>A</td><td>CS fundamentals (multiple choice)</td><td class="n">5</td><td class="n">5</td></tr>
-        <tr><td>B</td><td>Logic</td><td class="n">2</td><td class="n">5</td></tr>
+        <tr><td>B</td><td>Logic</td><td class="n">2</td><td class="n">4</td></tr>
         <tr><td>C</td><td>Code tracing</td><td class="n">5</td><td class="n">10</td></tr>
-        <tr><td>D</td><td>Coding</td><td class="n">2</td><td class="n">14</td></tr>
-        <tr><td>E</td><td>Problems</td><td class="n">1</td><td class="n">6</td></tr>
-        <tr><td></td><td><b>Total</b></td><td class="n">15</td><td class="n"><b>40</b></td></tr>
+        <tr><td>D</td><td>Coding</td><td class="n">2</td><td class="n">12</td></tr>
+        <tr><td>E</td><td>Problems</td><td class="n">1</td><td class="n">10</td></tr>
+        <tr><td></td><td><b>Total</b></td><td class="n">15</td><td class="n"><b>41</b></td></tr>
       </tbody>
     </table>
     <div class="fields">
@@ -254,7 +254,7 @@ const SK = ["https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js","http
 /* ===== SETUP: paste your Google Apps Script web app URL between the quotes ===== */
 const SUBMIT_URL = "https://script.google.com/macros/s/AKfycbzkSeV1xEY-R7QdhZ6mWKi9Xglr5mPwWAVchVxmypQRNirhHGXueewVSXCNtz5xq5NC/exec";
 /* ============================================================================== */
-const DURATION_MIN = 60, LIMIT_MS = 6000, STORE_KEY = "guild-screening-gh-v3";
+const DURATION_MIN = 60, LIMIT_MS = 6000, STORE_KEY = "guild-screening-gh-v4";
 const $ = id => document.getElementById(id);
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 
@@ -273,7 +273,7 @@ const Q = [
   { id:"A4", part:"A", type:"mcq", pts:1, title:"Binary search", prompt:"Binary search on a sorted list of 1,000,000 numbers needs at most about how many comparisons?", opts:["10","20","1,000","500,000"] },
   { id:"A5", part:"A", type:"mcq", pts:1, title:"Time complexity", prompt:"What is the time complexity of this code?", code:{"python": "for i in range(n):\n    for j in range(i):\n        print(i, j)", "java": "for (int i = 0; i < n; i++) {\n    for (int j = 0; j < i; j++) {\n        System.out.println(i + \" \" + j);\n    }\n}", "cpp": "for (int i = 0; i < n; i++) {\n    for (int j = 0; j < i; j++) {\n        cout << i << \" \" << j << endl;\n    }\n}"}, opts:["O(n)","O(n log n)","O(n²)","O(2ⁿ)"] },
 
-  { id:"B1", part:"B", type:"num", pts:3, title:"The heavy coin", prompt:"You have 9 identical-looking coins. One is slightly heavier. Using a balance scale, what is the minimum number of weighings that always finds the heavy coin?", explain:"Describe your strategy (your teacher reads this)." },
+  { id:"B1", part:"B", type:"short", pts:2, title:"The heavy coin", prompt:"You have 9 identical-looking coins. One is slightly heavier. You have a balance scale with two pans.", label:"What is the fewest weighings that always finds the heavy coin?" },
   { id:"B2", part:"B", type:"multi", pts:2, title:"Greedy change", prompt:"A country has coins worth 1, 4, and 6 pesos. You want to make 8 pesos using the fewest coins.", parts:[
       "A greedy cashier always takes the largest coin that fits. How many coins does the cashier use?",
       "What is the actual minimum number of coins?" ] },
@@ -290,13 +290,13 @@ const Q = [
           ["h","Output"],["p","One integer: the sum of the divisors of N."],
           ["h","Explanation"],["p","The divisors of 12 are 1, 2, 3, 4, 6 and 12, so the answer is 28."]],
     samples:[{in:"12",out:"28"},{in:"6",out:"12"}] },
-  { id:"D2", part:"D", type:"code", pts:8, title:"Is It Prime?", starter:"one",
+  { id:"D2", part:"D", type:"code", pts:6, title:"Is It Prime?", starter:"one",
     body:[["p","A prime number is a whole number greater than 1 whose only divisors are 1 and itself. Given N, decide whether N is prime."],
           ["h","Input"],["p","One line with the integer N (1 ≤ N ≤ 1,000,000,000)."],
           ["h","Output"],["p","Print YES if N is prime, or NO if it is not. Use capital letters."],
           ["h","Explanation"],["p","7 has no divisors other than 1 and 7, so it is prime. 12 is divisible by 2, 3, 4 and 6, so it is not."]],
     samples:[{in:"7",out:"YES"},{in:"12",out:"NO"}] },
-  { id:"E1", part:"E", type:"code", pts:6, title:"Lucky Plates", starter:"list",
+  { id:"E1", part:"E", type:"code", pts:10, title:"Lucky Plates", starter:"list",
     body:[["p","A jeepney plate number is lucky if the sum of its digits is divisible by 7. Given N plate numbers, count how many are lucky."],
           ["h","Input"],["p","The first line has N (1 ≤ N ≤ 50,000). The second line has N integers, each between 1 and 1,000,000,000."],
           ["h","Output"],["p","One integer: the number of lucky plates."],
